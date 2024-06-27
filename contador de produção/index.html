@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contadores</title>
+    <style>
+        body {
+            background-image: url('https://i.postimg.cc/kgD6bQWS/untitled.png'); /* Substitua pela URL da sua imagem */
+            background-size: cover;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            color: white;
+        }
+        #counters, #goals, #completedGoals, #stats {
+            margin-top: 20px;
+        }
+        .counter, .goal {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid white;
+            border-radius: 5px;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .counter button, .goal button {
+            margin-left: 10px;
+            background-color: white;
+            color: black;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        .counter button:hover, .goal button:hover {
+            background-color: lightgray;
+        }
+        .counter input {
+            width: 50px;
+            text-align: center;
+        }
+        #goalsContainer {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            max-width: 300px;
+        }
+        #goalsContainer h2, #statsContainer h2 {
+            margin: 10px 0;
+        }
+        #statsContainer {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            max-width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Contadores</h1>
+    <button onclick="createCounter()">Criar Contador</button>
+    <button onclick="createGoal()">Criar Meta</button>
+    <div id="counters"></div>
+    <div id="goalsContainer">
+        <h2>Metas em Andamento</h2>
+        <div id="goals"></div>
+        <h2>Metas Concluídas</h2>
+        <div id="completedGoals"></div>
+    </div>
+    <div id="statsContainer">
+        <h2>Estatísticas</h2>
+        <div id="stats"></div>
+    </div>
+
+    <script>
+        let counters = JSON.parse(localStorage.getItem('counters')) || [];
+        let goals = JSON.parse(localStorage.getItem('goals')) || [];
+        let logs = JSON.parse(localStorage.getItem('logs')) || [];
+
+        function createCounter() {
+            const counterName = prompt('Nome do Contador:');
+            if (counterName) {
+                counters.push({ name: counterName, value: 0 });
+                saveCounters();
+                renderCounters();
+                renderStats();
+            }
+        }
+
+        function incrementCounter(index) {
+            const incrementValue = parseInt(document.getElementById(`incrementValue-${index}`).value) || 1;
+            counters[index].value += incrementValue;
+            logs.push({ counter: counters[index].name, value: incrementValue, timestamp: new Date().toISOString() });
+            saveCounters();
+            saveLogs();
+            renderCounters();
+            renderStats();
+        }
+
+        function decrementCounter(index) {
+            const decrementValue = parseInt(document.getElementById(`incrementValue-${index}`).value) || 1;
+            counters[index].value -= decrementValue;
+            logs.push({ counter: counters[index].name, value: -decrementValue, timestamp: new Date().toISOString() });
+            saveCounters();
+            saveLogs();
+            renderCounters();
+            renderStats();
+        }
+
+        function deleteCounter(index) {
+            counters.splice(index, 1);
+            saveCounters();
+            renderCounters();
+            renderStats();
+        }
+
+        function saveCounters() {
+            localStorage.setItem('counters', JSON.stringify(counters));
+        }
+
+        function saveLogs() {
+            localStorage.setItem('logs', JSON.stringify(logs));
+        }
+
+        function renderCounters() {
+            const countersDiv = document.getElementById('counters');
+            countersDiv.innerHTML = '';
+            counters.forEach((counter, index) => {
+                const counterDiv = document.createElement('div');
+                counterDiv.className = 'counter';
+                counterDiv.innerHTML = `
+                    <span><strong>${counter.name}</strong>: ${counter.value}</span>
+                    <input type="number" id="incrementValue-${index}" value="1">
+                    <div>
+                        <button onclick="incrementCounter(${index})">+</button>
+                        <button onclick="decrementCounter(${index})">-</button>
+                        <button onclick="deleteCounter(${index})">Excluir</button>
+                    </div>
+                `;
+                countersDiv.appendChild(counterDiv);
+            });
+        }
+
+        function createGoal() {
+            const goalName = prompt('Nome da Meta:');
+            if (goalName) {
+                goals.push({ name: goalName, achieved: false });
+                saveGoals();
+                renderGoals();
+            }
+        }
+
+        function toggleGoal(index) {
+            goals[index].achieved = !goals[index].achieved;
+            saveGoals();
+            renderGoals();
+        }
+
+        function deleteGoal(index) {
+            goals.splice(index, 1);
+            saveGoals();
+            renderGoals();
+        }
+
+        function saveGoals() {
+            localStorage.setItem('goals', JSON.stringify(goals));
+        }
+
+        function renderGoals() {
+            const goalsDiv = document.getElementById('goals');
+            const completedGoalsDiv = document.getElementById('completedGoals');
+            goalsDiv.innerHTML = '';
+            completedGoalsDiv.innerHTML = '';
+
+            goals.forEach((goal, index) => {
+                const goalDiv = document.createElement('div');
+                goalDiv.className = 'goal';
+                goalDiv.innerHTML = `
+                    <span><strong>${goal.name}</strong></span>
+                    <div>
+                        <button onclick="toggleGoal(${index})">${goal.achieved ? '✓' : '✗'}</button>
+                        <button onclick="deleteGoal(${index})">Excluir</button>
+                    </div>
+                `;
+                if (goal.achieved) {
+                    completedGoalsDiv.appendChild(goalDiv);
+                } else {
+                    goalsDiv.appendChild(goalDiv);
+                }
+            });
+        }
+
+        function calculateStats(counterName, logs, period) {
+            const now = new Date();
+            let periodStart;
+            switch (period) {
+                case 'hour':
+                    periodStart = new Date(now.getTime() - (60 * 60 * 1000));
+                    break;
+                case 'day':
+                    periodStart = new Date(now.getTime() - (24 * 60 * 60 * 1000));
+                    break;
+                case 'month':
+                    periodStart = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+                    break;
+                case 'year':
+                    periodStart = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+                    break;
+                default:
+                    periodStart = new Date(0);
+            }
+            return logs
+                .filter(log => log.counter === counterName && new Date(log.timestamp) >= periodStart)
+                .reduce((total, log) => total + log.value, 0);
+        }
+
+        function renderStats() {
+            const statsDiv = document.getElementById('stats');
+            statsDiv.innerHTML = '';
+
+            counters.forEach(counter => {
+                const hourTotal = calculateStats(counter.name, logs, 'hour');
+                const dayTotal = calculateStats(counter.name, logs, 'day');
+                const monthTotal = calculateStats(counter.name, logs, 'month');
+                const yearTotal = calculateStats(counter.name, logs, 'year');
+
+                const counterStatsDiv = document.createElement('div');
+                counterStatsDiv.className = 'stats';
+                counterStatsDiv.innerHTML = `
+                    <strong>${counter.name}</strong>
+                    <ul>
+                        <li>Última hora: ${hourTotal}</li>
+                        <li>Último dia: ${dayTotal}</li>
+                        <li>Último mês: ${monthTotal}</li>
+                        <li>Último ano: ${yearTotal}</li>
+                    </ul>
+                `;
+                statsDiv.appendChild(counterStatsDiv);
+            });
+        }
+
+        // Render counters, goals, and stats on page load
+        renderCounters();
+        renderGoals();
+        renderStats();
+    </script>
+</body>
+</html>
