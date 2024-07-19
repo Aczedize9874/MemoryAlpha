@@ -1,0 +1,29 @@
+@keyframes flipIn {
+    0% {
+        transform: rotateX(-90deg);
+        opacity: 0;
+    }
+    100% {
+        transform: rotateX(0deg);
+        opacity: 1;
+    }
+}
+
+@keyframes flipOut {
+    0% {
+        transform: rotateX(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: rotateX(90deg);
+        opacity: 0;
+    }
+}
+
+.flipIn {
+    animation: flipIn 0.75s forwards;
+}
+
+.flipOut {
+    animation: flipOut 0.75s forwards;
+}

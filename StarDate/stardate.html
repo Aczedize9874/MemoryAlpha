@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relógio e Stardate</title>
+    <style>
+        @font-face {
+            font-family: 'Mint Type - Stereonic-XS.otf';
+            src: url('fonts/Mint Type - Stereonic-XS.otf') format('opentype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        body {
+            background-image: url('C:/Users/Hayan/Downloads/Untitled_Project_V1.gif'); /* Altere para o caminho do seu GIF */
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+            height: 100vh;
+        }
+
+        .clock,
+        .stardate {
+            font-size: 115px;
+            font-family: 'Mint Type - Stereonic-XS.otf', sans-serif;
+            display: inline-block;
+            background-color: rgba(0, 0, 0, 0);
+            color: #C4A95A;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+            margin: 100px;
+            position: absolute;
+        }
+
+        .clock {
+            left: 740px;
+            top: 265px;
+            color: #fffb00;
+            font-size: 520%;
+        }
+
+        .stardate {
+            left: 5%;
+            top: 270px;
+            font-size: 350%;
+            color: #fffb00;
+        }
+
+        .pauseButton {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+
+        input[type="text"] {
+            font-size: 20px;
+            margin: 5px;
+            padding: 5px;
+            text-align: center;
+            position: fixed;
+            bottom: 10px;
+            left: calc(50% - 200px);
+        }
+
+        #stardateInput {
+            left: calc(50% + 200px);
+        }
+
+        .digit {
+            position: absolute;
+            opacity: 0;
+            transition: opacity 0.75s;
+        }
+
+        .digit.show {
+            opacity: 1;
+        }
+
+        .animate-text-shadow {
+            animation: fade-text-shadow 0.75s ease-in-out;
+        }
+
+        @keyframes fade-text-shadow {
+            0% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="stardate" id="stardateContainer">
+        <div class="digit show" id="stardate1">{-26}0000.000000</div>
+    </div>
+    <div class="clock" id="clockContainer">
+        <div class="digit show" id="clock1">00:00:00</div>
+    </div>
+    <button class="pauseButton" onclick="togglePause('clock')">Pause/Continue Clock</button>
+    <button class="pauseButton" onclick="togglePause('stardate')">Pause/Continue Stardate</button>
+    <button class="pauseButton" onclick="togglePause('countdown')">Pause/Continue Countdown</button>
+    <button class="pauseButton" onclick="reset()">Reset</button><br>
+    <input type="text" id="clockInput" placeholder="Digite o novo tempo do relógio (00:00:00 - 23:59:59)">
+    <input type="text" id="stardateInput" placeholder="Digite o novo tempo do Stardate ({-26}0000.000000)">
+    <input type="text" id="countdownInput" placeholder="Digite o tempo para contagem regressiva (99999:59:59)">
+
+    <script>
+        let clockPaused = true;
+        let stardatePaused = true;
+        let countdownPaused = true;
+        let clockTimeout, stardateTimeout, countdownTimeout;
+        let clockContainer = document.getElementById('clockContainer');
+        let stardateContainer = document.getElementById('stardateContainer');
+        let currentClockDigit = 1;
+        let currentStardateDigit = 1;
+
+        function togglePause(timerType) {
+            if (timerType === 'clock') {
+                clockPaused = !clockPaused;
+                if (clockPaused) {
+                    clearTimeout(clockTimeout);
+                } else {
+                    updateClock();
+                }
+            } else if (timerType === 'stardate') {
+                stardatePaused = !stardatePaused;
+                if (stardatePaused) {
+                    clearTimeout(stardateTimeout);
+                } else {
+                    updateStardate();
+                }
+            } else if (timerType === 'countdown') {
+                countdownPaused = !countdownPaused;
+                if (countdownPaused) {
+                    clearTimeout(countdownTimeout);
+                } else {
+                    updateCountdown();
+                }
+            }
+        }
+
+        function reset() {
+            clearTimeout(clockTimeout);
+            clearTimeout(stardateTimeout);
+            clearTimeout(countdownTimeout);
+            document.getElementById('clock1').textContent = '00:00:00';
+            document.getElementById('stardate1').textContent = '{-26}0000.000000';
+            clockPaused = true;
+            stardatePaused = true;
+            countdownPaused = true;
+        }
+
+        function updateClock() {
+            if (!clockPaused) {
+                let currentClock = document.getElementById('clock' + currentClockDigit);
+                let [hours, minutes, seconds] = currentClock.textContent.split(':').map(Number);
+
+                seconds++;
+                if (seconds === 60) {
+                    seconds = 0;
+                    minutes++;
+                }
+                if (minutes === 60) {
+                    minutes = 0;
+                    hours++;
+                }
+                if (hours === 24) {
+                    hours = 0;
+                }
+
+                currentClockDigit = currentClockDigit === 1 ? 2 : 1;
+                let nextClock = document.getElementById('clock' + currentClockDigit);
+                if (!nextClock) {
+                    nextClock = document.createElement('div');
+                    nextClock.classList.add('digit');
+                    nextClock.id = 'clock' + currentClockDigit;
+                    clockContainer.appendChild(nextClock);
+                }
+                nextClock.textContent = ('00' + hours).slice(-2) + ':' +
+                    ('00' + minutes).slice(-2) + ':' +
+                    ('00' + seconds).slice(-2);
+                nextClock.classList.add('show');
+                currentClock.classList.remove('show');
+
+                clockTimeout = setTimeout(updateClock, 1000);
+            }
+        }
+
+        function updateStardate() {
+            if (!stardatePaused) {
+                let currentStardate = document.getElementById('stardate' + currentStardateDigit);
+                let stardate = parseFloat(currentStardate.textContent.replace('{-26}', '') || 0);
+                stardate += 0.000001;
+
+                currentStardateDigit = currentStardateDigit === 1 ? 2 : 1;
+                let nextStardate = document.getElementById('stardate' + currentStardateDigit);
+                if (!nextStardate) {
+                    nextStardate = document.createElement('div');
+                    nextStardate.classList.add('digit');
+                    nextStardate.id = 'stardate' + currentStardateDigit;
+                    stardateContainer.appendChild(nextStardate);
+                }
+                nextStardate.textContent = `{-26}${stardate.toFixed(6)}`;
+                nextStardate.classList.add('show');
+                currentStardate.classList.remove('show');
+
+                stardateTimeout = setTimeout(updateStardate, 1000);
+            }
+        }
+
+        function updateCountdown() {
+            if (!countdownPaused) {
+                let currentClock = document.getElementById('clock' + currentClockDigit);
+                let [hours, minutes, seconds] = currentClock.textContent.split(':').map(Number);
+
+                if (seconds === 0) {
+                    if (minutes === 0) {
+                        if (hours === 0) {
+                            countdownPaused = true;
+                            alert("Contagem regressiva finalizada");
+                            return;
+                        } else {
+                            hours--;
+                            minutes = 59;
+                        }
+                    } else {
+                        minutes--;
+                    }
+                    seconds = 59;
+                } else {
+                    seconds--;
+                }
+
+                currentClockDigit = currentClockDigit === 1 ? 2 : 1;
+                let nextClock = document.getElementById('clock' + currentClockDigit);
+                if (!nextClock) {
+                    nextClock = document.createElement('div');
+                    nextClock.classList.add('digit');
+                    nextClock.id = 'clock' + currentClockDigit;
+                    clockContainer.appendChild(nextClock);
+                }
+                nextClock.textContent = ('00' + hours).slice(-2) + ':' +
+                    ('00' + minutes).slice(-2) + ':' +
+                    ('00' + seconds).slice(-2);
+                nextClock.classList.add('show');
+                currentClock.classList.remove('show');
+
+                countdownTimeout = setTimeout(updateCountdown, 1000);
+            }
+        }
+
+        document.getElementById('clockInput').addEventListener('keyup', function (event) {
+            if (event.key === 'Enter') {
+                const newTime = this.value;
+                const validTime = /^([01]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/.test(newTime);
+                if (validTime) {
+                    document.getElementById('clock1').textContent = newTime;
+                    this.value = '';
+                    clockPaused = true;
+                    clearTimeout(clockTimeout);
+                    togglePause('clock');
+                } else {
+                    alert('Formato de tempo inválido. Use o formato HH:MM:SS.');
+                }
+            }
+        });
+
+        document.getElementById('stardateInput').addEventListener('keyup', function (event) {
+            if (event.key === 'Enter') {
+                const newStardate = this.value;
+                const validStardate = /^\{-26\}\d{4,5}\.\d{6}$/.test(newStardate);
+                if (validStardate) {
+                    document.getElementById('stardate1').textContent = newStardate;
+                    this.value = '';
+                    stardatePaused = true;
+                    clearTimeout(stardateTimeout);
+                    togglePause('stardate');
+                } else {
+                    alert('Formato de Stardate inválido. Use o formato {-26}0000.000000.');
+                }
+            }
+        });
+
+        document.getElementById('countdownInput').addEventListener('keyup', function (event) {
+            if (event.key === 'Enter') {
+                const newTime = this.value;
+                const validTime = /^\d{1,5}:[0-5][0-9]:[0-5][0-9]$/.test(newTime);
+                if (validTime) {
+                    document.getElementById('clock1').textContent = newTime;
+                    this.value = '';
+                    countdownPaused = true;
+                    clearTimeout(countdownTimeout);
+                    togglePause('countdown');
+                } else {
+                    alert('Formato de contagem regressiva inválido. Use o formato 99999:59:59.');
+                }
+            }
+        });
+
+        updateClock();
+        updateStardate();
+    </script>
+</body>
+
+</html>

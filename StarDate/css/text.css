@@ -1,0 +1,22 @@
+.digit {
+    position: absolute;
+    opacity: 0;
+    transition: opacity 0.75s;
+}
+
+.digit.show {
+    opacity: 1;
+}
+
+.animate-text-shadow {
+    animation: fade-text-shadow 0.75s ease-in-out;
+}
+
+@keyframes fade-text-shadow {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
