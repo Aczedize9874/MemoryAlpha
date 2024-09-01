@@ -27,9 +27,9 @@
         .pixel {
             width: 20px;
             height: 20px;
-            background-color: red;
+            background-color: black;
         }
-        #controls {
+        #controls, #replayControls, #savedReplays {
             margin-bottom: 20px;
         }
         #timer {
@@ -57,6 +57,8 @@
     <div id="replayControls">
         <input type="text" id="replayName" placeholder="Enter replay name">
         <button id="saveReplayBtn">Save Replay</button>
+        <input type="text" id="loadReplayName" placeholder="Enter replay name to load">
+        <button id="loadReplayBtn">Load Replay</button>
     </div>
     
     <div id="savedReplays">
@@ -70,7 +72,9 @@
         const durationInput = document.getElementById('duration');
         const startBtn = document.getElementById('startBtn');
         const saveReplayBtn = document.getElementById('saveReplayBtn');
+        const loadReplayBtn = document.getElementById('loadReplayBtn');
         const replayNameInput = document.getElementById('replayName');
+        const loadReplayNameInput = document.getElementById('loadReplayName');
         const replayList = document.getElementById('replayList');
         const gridSize = 6;
         const pixels = [];
@@ -175,11 +179,27 @@
             const replayName = replayNameInput.value.trim();
             if (replayName && teleportEvents.length > 0) {
                 savedReplays.push({ name: replayName, events: [...teleportEvents], duration: totalDuration });
+                localStorage.setItem('savedReplays', JSON.stringify(savedReplays));
                 displaySavedReplays();
                 replayNameInput.value = '';
                 alert(`Replay "${replayName}" saved!`);
             } else {
                 alert('Please enter a valid replay name and ensure there are events to save.');
+            }
+        });
+
+        // Load replay
+        loadReplayBtn.addEventListener('click', () => {
+            const replayName = loadReplayNameInput.value.trim();
+            const replay = savedReplays.find(r => r.name === replayName);
+
+            if (replay) {
+                teleportEvents = [...replay.events];
+                totalDuration = replay.duration;
+                timerDisplay.textContent = `Loaded replay "${replayName}"`;
+                replayTeleports();
+            } else {
+                alert('Replay not found.');
             }
         });
 
@@ -191,6 +211,15 @@
                 replayList.appendChild(li);
             });
         }
+
+        // Initialize saved replays from localStorage
+        document.addEventListener('DOMContentLoaded', () => {
+            const storedReplays = JSON.parse(localStorage.getItem('savedReplays'));
+            if (storedReplays) {
+                savedReplays = storedReplays;
+                displaySavedReplays();
+            }
+        });
     </script>
 </body>
 </html>
