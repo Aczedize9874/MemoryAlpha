@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grid Teleport Replay</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: black;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        #grid {
+            display: grid;
+            grid-template-columns: repeat(6, 20px);
+            grid-template-rows: repeat(6, 20px);
+            gap: 2px;
+            margin-bottom: 20px;
+        }
+        .pixel {
+            width: 20px;
+            height: 20px;
+            background-color: red;
+        }
+        #timer {
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div id="grid"></div>
+    <div id="timer">Press 'C' to start</div>
+
+    <script>
+        const grid = document.getElementById('grid');
+        const timerDisplay = document.getElementById('timer');
+        const gridSize = 6;
+        const pixels = [];
+        let startTime = null;
+        let teleportEvents = [];
+        let interval;
+        let replayTimeout;
+        let totalDuration = 20; // Total time in seconds
+
+        // Create grid
+        for (let i = 0; i < gridSize * gridSize; i++) {
+            const pixel = document.createElement('div');
+            pixel.classList.add('pixel');
+            grid.appendChild(pixel);
+            pixels.push(pixel);
+        }
+
+        // Start timing and teleporting on key press
+        document.addEventListener('keydown', (event) => {
+            if (event.key.toLowerCase() === 'c') {
+                if (!startTime) {
+                    startTime = Date.now();
+                    interval = setInterval(updateTimer, 100);
+                    timerDisplay.textContent = `Time left: ${totalDuration}s`;
+                }
+                teleportPixel();
+            }
+        });
+
+        function updateTimer() {
+            const elapsed = (Date.now() - startTime) / 1000;
+            const timeLeft = totalDuration - elapsed;
+
+            if (timeLeft > 0) {
+                timerDisplay.textContent = `Time left: ${timeLeft.toFixed(1)}s`;
+            } else {
+                clearInterval(interval);
+                timerDisplay.textContent = "Replay starting...";
+                setTimeout(() => {
+                    replayTeleports();
+                }, 1000); // Small delay before replay starts
+            }
+        }
+
+        function teleportPixel() {
+            const randomIndex = Math.floor(Math.random() * pixels.length);
+            const currentTime = (Date.now() - startTime) / 1000;
+            teleportEvents.push({ time: currentTime, index: randomIndex });
+            updateGrid(randomIndex);
+        }
+
+        function updateGrid(index) {
+            pixels.forEach(pixel => pixel.style.backgroundColor = 'black');
+            pixels[index].style.backgroundColor = 'red';
+        }
+
+        function replayTeleports() {
+            timerDisplay.textContent = `Replay in progress...`;
+            let eventIndex = 0;
+            const replayStartTime = Date.now();
+
+            function replayNextTeleport() {
+                if (eventIndex < teleportEvents.length) {
+                    const event = teleportEvents[eventIndex];
+                    const delay = event.time * 1000; // Milliseconds
+
+                    setTimeout(() => {
+                        updateGrid(event.index);
+                        eventIndex++;
+                        replayNextTeleport();
+                    }, delay);
+                } else {
+                    startReplayCountdown();
+                }
+            }
+            replayNextTeleport();
+        }
+
+        function startReplayCountdown() {
+            let countdown = totalDuration;
+            timerDisplay.textContent = `Replay countdown: ${countdown}s`;
+
+            replayTimeout = setInterval(() => {
+                countdown--;
+                timerDisplay.textContent = `Replay countdown: ${countdown}s`;
+                if (countdown <= 0) {
+                    clearInterval(replayTimeout);
+                    timerDisplay.textContent = "Replay ended";
+                }
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
