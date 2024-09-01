@@ -29,25 +29,57 @@
             height: 20px;
             background-color: red;
         }
+        #controls {
+            margin-bottom: 20px;
+        }
         #timer {
             font-size: 24px;
+        }
+        #replayControls {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        #savedReplays {
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
+    <div id="controls">
+        <label for="duration">Set duration (seconds): </label>
+        <input type="number" id="duration" min="1" value="20">
+        <button id="startBtn">Set Time</button>
+    </div>
     <div id="grid"></div>
     <div id="timer">Press 'C' to start</div>
+
+    <div id="replayControls">
+        <input type="text" id="replayName" placeholder="Enter replay name">
+        <button id="saveReplayBtn">Save Replay</button>
+    </div>
+    
+    <div id="savedReplays">
+        <h3>Saved Replays:</h3>
+        <ul id="replayList"></ul>
+    </div>
 
     <script>
         const grid = document.getElementById('grid');
         const timerDisplay = document.getElementById('timer');
+        const durationInput = document.getElementById('duration');
+        const startBtn = document.getElementById('startBtn');
+        const saveReplayBtn = document.getElementById('saveReplayBtn');
+        const replayNameInput = document.getElementById('replayName');
+        const replayList = document.getElementById('replayList');
         const gridSize = 6;
         const pixels = [];
         let startTime = null;
         let teleportEvents = [];
         let interval;
         let replayTimeout;
-        let totalDuration = 20; // Total time in seconds
+        let totalDuration = 20; // Default total time in seconds
+        let savedReplays = [];
 
         // Create grid
         for (let i = 0; i < gridSize * gridSize; i++) {
@@ -57,9 +89,15 @@
             pixels.push(pixel);
         }
 
+        // Set total duration based on user input
+        startBtn.addEventListener('click', () => {
+            totalDuration = parseInt(durationInput.value);
+            timerDisplay.textContent = `Duration set to ${totalDuration} seconds. Press 'C' to start.`;
+        });
+
         // Start timing and teleporting on key press
         document.addEventListener('keydown', (event) => {
-            if (event.key.toLowerCase() === 'c') {
+            if (event.key.toLowerCase() === 'c' && totalDuration > 0) {
                 if (!startTime) {
                     startTime = Date.now();
                     interval = setInterval(updateTimer, 100);
@@ -99,18 +137,18 @@
         function replayTeleports() {
             timerDisplay.textContent = `Replay in progress...`;
             let eventIndex = 0;
-            const replayStartTime = Date.now();
 
             function replayNextTeleport() {
                 if (eventIndex < teleportEvents.length) {
                     const event = teleportEvents[eventIndex];
-                    const delay = event.time * 1000; // Milliseconds
+                    const nextEventTime = eventIndex === 0 ? event.time * 1000 
+                                    : (event.time - teleportEvents[eventIndex - 1].time) * 1000;
 
                     setTimeout(() => {
                         updateGrid(event.index);
                         eventIndex++;
                         replayNextTeleport();
-                    }, delay);
+                    }, nextEventTime);
                 } else {
                     startReplayCountdown();
                 }
@@ -130,6 +168,28 @@
                     timerDisplay.textContent = "Replay ended";
                 }
             }, 1000);
+        }
+
+        // Save replay
+        saveReplayBtn.addEventListener('click', () => {
+            const replayName = replayNameInput.value.trim();
+            if (replayName && teleportEvents.length > 0) {
+                savedReplays.push({ name: replayName, events: [...teleportEvents], duration: totalDuration });
+                displaySavedReplays();
+                replayNameInput.value = '';
+                alert(`Replay "${replayName}" saved!`);
+            } else {
+                alert('Please enter a valid replay name and ensure there are events to save.');
+            }
+        });
+
+        function displaySavedReplays() {
+            replayList.innerHTML = '';
+            savedReplays.forEach(replay => {
+                const li = document.createElement('li');
+                li.textContent = replay.name;
+                replayList.appendChild(li);
+            });
         }
     </script>
 </body>
